@@ -2,12 +2,14 @@
 
 This is a special repo!  It has a private partner at [StirlingLabs/.github-private](https://github.com/StirlingLabs/.github-private)
 
-### Our **PUBLIC** Organisation Profile
+
+## Our **PUBLIC** Organisation Profile
 
 - In the `profile` folder. 
 - See [GitHub documentation](https://docs.github.com/en/organizations/collaborating-with-groups-in-organizations/customizing-your-organizations-profile) for details.
 
-### Defaults for Private Repos
+
+## Defaults for PUBLIC Repos
 
 This repo acts as a default for anything that goes into a `.github` folder on a **public** repo, such as:
 
