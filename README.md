@@ -1,4 +1,4 @@
-# ⚠️ .github
+# ⚠️ StirlingLabs/.github
 
 This is a special repo!  It has a private partner at [StirlingLabs/.github-private](https://github.com/StirlingLabs/.github-private)
 
