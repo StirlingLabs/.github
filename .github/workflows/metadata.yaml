@@ -1,0 +1,112 @@
+name: Collect Metadata
+
+on:
+  workflow_call:
+    inputs:
+      githubRepository:
+        description: '${ GITHUB_REPOSITORY }'
+        type: string
+        required: true
+      name:
+        description: The core (most minimal) name of the project
+        type: string
+        requried: false
+      refType:
+        description: 'github.ref_type'
+        type: string
+        required: true
+      refName:
+        description: 'github.ref_name'
+        type: string
+        required: true
+
+    outputs:
+      project:
+        description: Project name (taken from repo)
+        value: ${{ jobs.meta.outputs.project }}
+      projectCoreName:
+        description: Minimal project name
+        value: ${{ jobs.meta.outputs.projectCoreName }}
+      fullVersion:
+        description: Full version number (with no v prefix)
+        value: ${{ jobs.meta.outputs.full }}
+      majorVersion:
+        description: Just the first portion of the version number
+        value: ${{ jobs.meta.outputs.major }}
+      significantVersion:
+        description: All of the significant parts of the version number
+        value: ${{ jobs.meta.outputs.significant }}
+      linuxName:
+        description: Name that would be given to a library for this project on Linux
+        value: ${{ jobs.meta.outputs.linuxName }}
+      macName:
+        description: Name that would be given to a library for this project on MacOS
+        value: ${{ jobs.meta.outputs.macName }}
+      winName:
+        description: Filename that would be given to a DLL for this project on Windows
+        value: ${{ jobs.meta.outputs.winName }}
+
+jobs:
+  meta:
+    name: Collect Metadata
+    runs-on: ubuntu-latest
+    outputs:
+      project: ${{ steps.name.outputs.project }}
+      projectCoreName: ${{ steps.name.outputs.projectCoreName }}
+      fullVersion: ${{ steps.version.outputs.full }}
+      majorVersion: ${{ steps.version.outputs.major }}
+      significantVersion: ${{ steps.version.outputs.significant }}
+      linuxName: lib${{ steps.name.outputs.projectCoreName }}.so.${{ steps.version.outputs.significant }}
+      macName: lib${{ steps.name.outputs.projectCoreName }}.${{ steps.version.outputs.significant }}.dylib
+      winName: ${{ steps.name.outputs.projectCoreName }}-${{ steps.version.outputs.significant }}.dll
+
+    steps:
+      - name: Get Name
+        id: name
+        run: |
+          project=${githubRepository#*/}
+          if [ $projectCoreName=="" ] ; then
+            projectCoreName=$project
+          fi
+          echo "::set-output name=project::$project"
+          echo "::set-output name=projectCoreName::$projectCoreName"
+        env:
+          githubRepository: ${{ inputs.githubRepository }}
+          projectCoreName: ${{ inputs.name }}
+
+      - name: Good Version
+        id: version
+        if: |
+            inputs.refType == 'tag' &&
+            startsWith(inputs.refName, 'v')
+        run: |
+          fullVersion=${version:1}
+          arrayVersion=(${fullVersion//./ })
+          majorVersion=${arrayVersion[0]}
+          significantVersion=""
+          dot=""
+          for v in "${arrayVersion[@]}" ; do
+            if (( 10#$v > 0 )) ; then
+              significantVersion=$significantVersion$dot$v
+              dot="."
+            fi
+          done
+          echo Full $fullVersion, Significant $significantVersion, Major $majorVersion ... minor ${arrayVersion[1]} patch ${arrayVersion[2]} package ${arrayVersion[3]}
+          if [[ $majorVersion =~ ^-?[0-9]+$ ]]; then
+            echo "::set-output name=full::$fullVersion"
+            echo "::set-output name=major::$majorVersion"
+            echo "::set-output name=significant::$significantVersion"
+          else
+            echo "{{ steps.name.outputs.project }} version ${version:1:2}, derived from -- $version -- is not numeric."
+            exit 1
+          fi
+        env:
+          version: ${{ inputs.refName }}
+
+      - name: Bad Version
+        if: |
+            inputs.refType != 'tag' ||
+            !startsWith(inputs.refName, 'v')
+        run: |
+          echo "The tag to be in the format v22.09.6"
+          exit 1
