@@ -1,10 +1,10 @@
-name: Collect Metadata
+name: Metadata
 
 on:
   workflow_call:
     inputs:
       gitRepo:
-        description: '${ GITHUB_REPOSITORY }'
+        description: github.repository
         type: string
         required: true
       coreName:
@@ -52,6 +52,7 @@ on:
 
 jobs:
   meta:
+    name: Collection
     runs-on: ubuntu-latest
     outputs:
       project: ${{ steps.name.outputs.project }}
