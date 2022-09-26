@@ -3,20 +3,20 @@ name: Collect Metadata
 on:
   workflow_call:
     inputs:
-      githubRepository:
+      gitRepo:
         description: '${ GITHUB_REPOSITORY }'
         type: string
         required: true
-      name:
+      coreName:
         description: The core (most minimal) name of the project
         type: string
-        requried: false
+        required: false
       refType:
-        description: 'github.ref_type'
+        description: github.ref_type
         type: string
         required: true
       refName:
-        description: 'github.ref_name'
+        description: github.ref_name
         type: string
         required: true
 
@@ -71,8 +71,8 @@ jobs:
           echo "::set-output name=project::$project"
           echo "::set-output name=projectCoreName::$projectCoreName"
         env:
-          githubRepository: ${{ inputs.githubRepository }}
-          projectCoreName: ${{ inputs.name }}
+          githubRepository: ${{ inputs.gitRepo }}
+          projectCoreName: ${{ inputs.coreName }}
 
       - name: Good Version
         id: version
