@@ -19,14 +19,18 @@ on:
         description: github.ref_name
         type: string
         required: true
+      strictVersion:
+        description: Error if version not valid?
+        type: boolean
+        default: false
 
     outputs:
       project:
         description: Project name (taken from repo)
         value: ${{ jobs.meta.outputs.project }}
-      projectCoreName:
+      coreName:
         description: Minimal project name
-        value: ${{ jobs.meta.outputs.projectCoreName }}
+        value: ${{ jobs.meta.outputs.coreName }}
       fullVersion:
         description: Full version number (with no v prefix)
         value: ${{ jobs.meta.outputs.full }}
@@ -48,28 +52,27 @@ on:
 
 jobs:
   meta:
-    name: Collect Metadata
     runs-on: ubuntu-latest
     outputs:
       project: ${{ steps.name.outputs.project }}
-      projectCoreName: ${{ steps.name.outputs.projectCoreName }}
+      coreName: ${{ steps.name.outputs.coreName }}
       fullVersion: ${{ steps.version.outputs.full }}
       majorVersion: ${{ steps.version.outputs.major }}
       significantVersion: ${{ steps.version.outputs.significant }}
-      linuxName: lib${{ steps.name.outputs.projectCoreName }}.so.${{ steps.version.outputs.significant }}
-      macName: lib${{ steps.name.outputs.projectCoreName }}.${{ steps.version.outputs.significant }}.dylib
-      winName: ${{ steps.name.outputs.projectCoreName }}-${{ steps.version.outputs.significant }}.dll
+      linuxName: lib${{ steps.name.outputs.coreName }}.so.${{ steps.version.outputs.significant }}
+      macName: lib${{ steps.name.outputs.coreName }}.${{ steps.version.outputs.significant }}.dylib
+      winName: ${{ steps.name.outputs.coreName }}-${{ steps.version.outputs.significant }}.dll
 
     steps:
       - name: Get Name
         id: name
         run: |
           project=${githubRepository#*/}
-          if [ $projectCoreName=="" ] ; then
-            projectCoreName=$project
+          if [ $coreName == "" ] ; then
+            coreName=$project
           fi
           echo "::set-output name=project::$project"
-          echo "::set-output name=projectCoreName::$projectCoreName"
+          echo "::set-output name=coreName::$coreName"
         env:
           githubRepository: ${{ inputs.gitRepo }}
           projectCoreName: ${{ inputs.coreName }}
@@ -109,4 +112,8 @@ jobs:
             !startsWith(inputs.refName, 'v')
         run: |
           echo "The tag to be in the format v22.09.6"
-          exit 1
+          if [ $strictVersion == "true" ] ; then
+            exit 1
+          fi
+        env:
+          strict: ${{ inputs.strictVersion }}
