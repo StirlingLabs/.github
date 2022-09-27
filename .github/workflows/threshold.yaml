@@ -2,26 +2,6 @@ name: Threshold
 
 on:
   workflow_call:
-    inputs:
-      eventName:
-        description: 'github.event_name'
-        type: string
-        required: true
-      commitMessage:
-        description: 'github.event.head_commit.message'
-        type: string
-      pullRequestDraft:
-        description: 'github.event.pull_request.draft'
-        type: boolean
-        default: false
-      refType:
-        description: 'github.ref_type'
-        type: string
-        required: true
-      refName:
-        description: 'github.ref_name'
-        type: string
-        required: true
     outputs:
       continue:
         description: "Processing on this repo should continue"
@@ -41,54 +21,34 @@ jobs:
           GITHUB_CONTEXT: ${{ toJSON(github) }}
         run: echo "$GITHUB_CONTEXT"
 
-      - name: Event Name is Equal
-        if: github.event_name == inputs.eventName
-        run: echo ${{github.event_name}} == ${{inputs.commitMessage}}
-
-      - name: Commit Message is Equal
-        if: github.event.head_commit.message == inputs.commitMessage
-        run: echo ${{github.event.head_commit.message}} == ${{inputs.commitMessage}}
-
-      - name: pullRequestDraft is Equal
-        if: github.event.pull_request.draft == inputs.pullRequestDraft
-        run: echo ${{github.event.pull_request.draft}} == ${{inputs.pullRequestDraft}}
-
-      - name: refType Message is Equal
-        if: github.ref_type == inputs.refType
-        run: echo ${{github.ref_type}} == ${{inputs.refType}}
-
-      - name: Commit Message is Equal
-        if: github.ref_name == inputs.refName
-        run: echo ${{github.ref_name}} == ${{inputs.refName}}
-
       - name: Check if CI is forced
         id: force_ci_check
         if: |
-            inputs.eventName == 'push' &&
-            contains(inputs.commitMessage, '[force ci]')
+            github.event_name == 'push' &&
+            contains(github.event.head_commit.message, '[force ci]')
         run: |
             echo "::set-output name=should_skip::false"
       - name: Check if PR is a draft
         id: pr_draft_check
         if: |
-          inputs.eventName == 'pull_request' &&
+          github.event_name == 'pull_request' &&
           (steps.force_ci_check.outcome == 'skipped' || steps.force_ci_check.outputs.should_skip != 'false')
         env:
-            draft: ${{ inputs.pullRequestDraft }}
+            draft: ${{ github.event.pull_request.draft }}
         run: |
             echo "::set-output name=should_skip::$draft"
       - name: Check if this is a Release
         id: released_check
         if: |
-            inputs.eventName == 'push' &&
-            inputs.refType == 'tag' &&
-            startsWith(inputs.refName, 'v')
+            github.event_name == 'push' &&
+            github.ref_type == 'tag' &&
+            startsWith(github.ref_name, 'v')
         run: |
             echo "::set-output name=should_skip::false"
       - name: Check if changes pushed
         id: push_new_check
         if: |
-            inputs.eventName == 'push' &&
+            github.event_name == 'push' &&
             (steps.force_ci_check.outcome == 'skipped' || steps.force_ci_check.outputs.should_skip != 'false') &&
             (steps.released_check.outcome == 'skipped' || steps.released_check.outputs.should_skip != 'false')
         uses: fkirc/skip-duplicate-actions@v4
@@ -97,6 +57,7 @@ jobs:
             paths_ignore: '["**/README.md", ".idea/**", ".editorconfig", ".git*", "docs/**", ".github/**", "**/Doxyfile.in"]'
             github_token: ${{ secrets.GITHUB_TOKEN }}
             concurrent_skipping: never
+            cancel_others: true
       - name: Collate Checks
         id: collate_checks
         if: |
