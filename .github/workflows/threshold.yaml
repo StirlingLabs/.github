@@ -36,9 +36,30 @@ jobs:
       continue: ${{ !steps.collate_checks.outputs.should_skip }}
     steps:
       - name: Dump GitHub context
+        if: false
         env:
           GITHUB_CONTEXT: ${{ toJSON(github) }}
         run: echo "$GITHUB_CONTEXT"
+
+      - name: Event Name is Equal
+        if: github.event_name == inputs.eventName
+        run: echo ${{github.event_name}} == ${{inputs.commitMessage}}
+
+      - name: Commit Message is Equal
+        if: github.event.head_commit.message == inputs.commitMessage
+        run: echo ${{github.event.head_commit.message}} == ${{inputs.commitMessage}}
+
+      - name: pullRequestDraft is Equal
+        if: github.event.pull_request.draft == inputs.pullRequestDraft
+        run: echo ${{github.event.pull_request.draft}} == ${{inputs.pullRequestDraft}}
+
+      - name: refType Message is Equal
+        if: github.ref_type == inputs.refType
+        run: echo ${{github.ref_type}} == ${{inputs.refType}}
+
+      - name: Commit Message is Equal
+        if: github.ref_name == inputs.refName
+        run: echo ${{github.ref_name}} == ${{inputs.refName}}
 
       - name: Check if CI is forced
         id: force_ci_check

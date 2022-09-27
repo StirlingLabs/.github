@@ -40,6 +40,9 @@ on:
       significantVersion:
         description: All of the significant parts of the version number
         value: ${{ jobs.meta.outputs.significant }}
+      currentBranch:
+        description: Name of the current branch of the project
+        value: ${{ jobs.meta.outputs.branch }}
       linuxName:
         description: Name that would be given to a library for this project on Linux
         value: ${{ jobs.meta.outputs.linuxName }}
@@ -57,6 +60,8 @@ jobs:
     outputs:
       project: ${{ steps.name.outputs.project }}
       coreName: ${{ steps.name.outputs.coreName }}
+      currentBranch: ${{ steps.repo.outputs.currentBranch }}
+      homepage: ${{ steps.repo.outputs.homepage }}
       fullVersion: ${{ steps.version.outputs.full }}
       majorVersion: ${{ steps.version.outputs.major }}
       significantVersion: ${{ steps.version.outputs.significant }}
@@ -65,10 +70,31 @@ jobs:
       winName: ${{ steps.name.outputs.coreName }}-${{ steps.version.outputs.significant }}.dll
 
     steps:
+      - name: Dump GitHub context
+        if: false
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - name: repository is Equal
+        if: github.repository == inputs.gitRepo
+        run: echo github.repository == inputs.gitRepo ${{github.repository}} == ${{inputs.gitRepo}}
+
+      - name: refType Message is Equal
+        if: github.ref_type == inputs.refType
+        run: echo github.ref_type == inputs.refType ${{github.ref_type}} == ${{inputs.refType}}
+
+      - name: Commit Message is Equal
+        if: github.ref_name == inputs.refName
+        run: echo github.ref_name == inputs.refName ${{github.ref_name}} == ${{inputs.refName}}
+
       - name: Get Name
         id: name
         run: |
           project=${githubRepository#*/}
+          if [ "$project" == "$githubRespositoryName" ] ; then
+            echo "project == githubRespositoryName $project == $githubRespositoryName"
+          fi
           if [ $coreName == "" ] ; then
             coreName=$project
           fi
@@ -77,6 +103,23 @@ jobs:
         env:
           githubRepository: ${{ inputs.gitRepo }}
           projectCoreName: ${{ inputs.coreName }}
+          githubRepositoryName: ${{ github.respository.name }}
+
+      - name: Commit Message is Equal
+        if: steps.name.outputs.project == github.respository.name
+        run: echo steps.name.outputs.project == github.respository.name ${{steps.name.outputs.project}} == ${{github.respository.name}}
+
+      - name: Repo Details
+        id: repo
+        run: |
+          echo "::set-output name=currentBranch::${GITHUB_REF#refs/heads/}"
+          if [ "$homepage" == "" ] ; then
+            homepage="$htmlUrl"
+          fi
+          echo "::set-output name=homepage::$homepage"
+        env:
+          homepage: ${{ github.repository.homepage }}
+          htmlUrl: ${{ github.repository.html_url }}
 
       - name: Good Version
         id: version
