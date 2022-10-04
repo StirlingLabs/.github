@@ -65,6 +65,9 @@ jobs:
       winName: ${{ steps.name.outputs.coreName }}-${{ steps.version.outputs.significant }}.dll
 
     steps:
+      - name: Deprecated
+        run: echo "Replace this Action with StirlingLabs/Actions/.github/workflows/metadata.yaml"
+        
       - name: Dump GitHub context
         if: true
         env:
